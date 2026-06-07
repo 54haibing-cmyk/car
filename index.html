@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+
+<meta charset="UTF-8">
+
+<meta name="viewport"
+content="width=device-width,initial-scale=1.0">
+
+<title>Word Match Hero 4.5</title>
+
+<link rel="stylesheet" href="style.css">
+
+</head>
+
+<body>
+
+<div id="stars"></div>
+
+<header>
+
+<h1>🌟 Word Match Hero 4.5 🌟</h1>
+
+<div class="top-bar">
+
+<div>
+等级：
+<span id="level">1</span>
+</div>
+
+<div>
+XP：
+<span id="xp">0</span>
+</div>
+
+<div>
+连击：
+<span id="combo">0</span>
+</div>
+
+</div>
+
+</header>
+
+<section class="game-panel">
+
+<button id="startBtn">
+
+🚀 开始游戏
+
+</button>
+
+<div id="levelTitle">
+
+第一关：动物王国
+
+</div>
+
+</section>
+
+<div id="board">
+
+</div>
+
+<div id="resultModal"
+class="hidden">
+
+<div class="result-box">
+
+<h2>
+
+🎉 恭喜通关！
+
+</h2>
+
+<p>
+
+获得经验值：
+
+<span id="finalXp">
+
+0
+
+</span>
+
+</p>
+
+<button id="nextBtn">
+
+进入下一关
+
+</button>
+
+</div>
+
+</div>
+
+<audio id="successSound">
+<source
+src="https://assets.mixkit.co/active_storage/sfx/2000/2000-preview.mp3">
+</audio>
+
+<audio id="failSound">
+<source
+src="https://assets.mixkit.co/active_storage/sfx/2955/2955-preview.mp3">
+</audio>
+
+<script src="words.js"></script>
+
+<script src="game.js"></script>
+
+</body>
+
+</html>
