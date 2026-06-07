@@ -1,0 +1,341 @@
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+}
+
+body{
+    min-height:100vh;
+    font-family:
+    "Segoe UI",
+    "Microsoft YaHei",
+    sans-serif;
+
+    background:
+    radial-gradient(
+        circle at top,
+        #3f2b96 0%,
+        #24104a 40%,
+        #0b0618 100%
+    );
+
+    color:white;
+
+    overflow-x:hidden;
+
+    position:relative;
+}
+
+/* ===== 顶部 ===== */
+
+header{
+
+    text-align:center;
+
+    padding:12px 8px;
+}
+
+h1{
+
+    font-size:1.4rem;
+
+    margin-bottom:10px;
+
+    text-shadow:
+    0 0 10px #4fc3f7;
+}
+
+.top-bar{
+
+    display:flex;
+
+    justify-content:center;
+
+    gap:15px;
+
+    flex-wrap:wrap;
+
+    font-size:13px;
+
+    font-weight:bold;
+}
+
+/* ===== 游戏面板 ===== */
+
+.game-panel{
+
+    text-align:center;
+
+    margin-bottom:10px;
+}
+
+#levelTitle{
+
+    margin-top:8px;
+
+    font-size:18px;
+
+    color:#ffd54f;
+
+    font-weight:bold;
+}
+
+button{
+
+    border:none;
+
+    border-radius:25px;
+
+    cursor:pointer;
+
+    padding:10px 20px;
+
+    font-size:14px;
+
+    font-weight:bold;
+
+    transition:.3s;
+}
+
+button:hover{
+
+    transform:scale(1.05);
+}
+
+#startBtn{
+
+    background:
+    linear-gradient(
+        45deg,
+        #00e5ff,
+        #00c853
+    );
+
+    color:white;
+}
+
+/* ===== 棋盘 ===== */
+
+#board{
+
+    width:94%;
+
+    margin:10px auto;
+
+    display:grid;
+
+    grid-template-columns:
+    repeat(4,1fr);
+
+    gap:6px;
+}
+
+/* ===== 卡片 ===== */
+
+.card{
+
+    height:58px;
+
+    background:
+    rgba(255,255,255,.12);
+
+    border:
+    1px solid rgba(255,255,255,.2);
+
+    border-radius:12px;
+
+    display:flex;
+
+    flex-direction:column;
+
+    justify-content:center;
+
+    align-items:center;
+
+    text-align:center;
+
+    transition:.25s;
+
+    cursor:pointer;
+}
+
+.card.selected{
+
+    border-color:#ffd54f;
+
+    box-shadow:
+    0 0 15px #ffd54f;
+}
+
+.card.matched{
+
+    opacity:0;
+
+    transform:scale(0);
+
+    pointer-events:none;
+}
+
+/* ===== 图片 ===== */
+
+.emoji{
+
+    font-size:18px;
+
+    line-height:1;
+}
+
+/* ===== 英文 ===== */
+
+.word{
+
+    font-size:14px;
+
+    font-weight:bold;
+
+    line-height:1.1;
+}
+
+/* ===== 中文 ===== */
+
+.cn{
+
+    font-size:8px;
+
+    color:#b3e5fc;
+
+    margin-top:2px;
+}
+
+/* ===== 通关弹窗 ===== */
+
+#resultModal{
+
+    position:fixed;
+
+    inset:0;
+
+    background:
+    rgba(0,0,0,.8);
+
+    display:flex;
+
+    justify-content:center;
+
+    align-items:center;
+
+    z-index:999;
+}
+
+.hidden{
+
+    display:none !important;
+}
+
+.result-box{
+
+    background:
+    rgba(20,20,40,.95);
+
+    border-radius:20px;
+
+    padding:25px;
+
+    text-align:center;
+
+    width:280px;
+
+    box-shadow:
+    0 0 25px #4fc3f7;
+}
+
+#nextBtn{
+
+    margin-top:15px;
+
+    background:
+    linear-gradient(
+        45deg,
+        #ff9800,
+        #ffeb3b
+    );
+
+    color:#333;
+}
+
+/* ===== 星空 ===== */
+
+.star{
+
+    position:fixed;
+
+    width:2px;
+
+    height:2px;
+
+    border-radius:50%;
+
+    background:white;
+
+    animation:
+    twinkle 2s infinite;
+}
+
+@keyframes twinkle{
+
+    0%{
+        opacity:.2;
+    }
+
+    50%{
+        opacity:1;
+    }
+
+    100%{
+        opacity:.2;
+    }
+}
+
+/* ===== 手机优化 ===== */
+
+@media(max-width:768px){
+
+    #board{
+
+        grid-template-columns:
+        repeat(4,1fr);
+
+        gap:5px;
+    }
+
+    .card{
+
+        height:58px;
+    }
+
+    .emoji{
+
+        font-size:18px;
+    }
+
+    .word{
+
+        font-size:14px;
+    }
+
+    .cn{
+
+        font-size:9px;
+    }
+
+    h1{
+
+        font-size:1.2rem;
+    }
+
+    .top-bar{
+
+        font-size:12px;
+    }
+
+}
