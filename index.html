@@ -1,105 +1,58 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Word Match Hero - Pi Edition</title>
-
-<link rel="stylesheet" href="style.css"/>
-
-<style>
-#piStatus{
-  position:fixed;top:10px;right:10px;
-  background:rgba(0,0,0,0.7);
-  color:#fff;padding:8px 12px;
-  border-radius:8px;font-size:12px;
-  z-index:9999;
-}
-#piLoginBtn{
-  position:fixed;top:50px;right:10px;
-  background:#7c3aed;color:#fff;
-  border:none;padding:10px 12px;
-  border-radius:8px;cursor:pointer;
-  z-index:9999;
-}
-</style>
-</head>
-
-<body>
-
-<div id="piStatus">Pi: Not Connected</div>
-<button id="piLoginBtn">🔐 Login with Pi</button>
-
-<div id="stars"></div>
-
-<header>
-<h1>🌟 WORD MATCH HERO 🌟</h1>
-<div>Level: <span id="level">1</span></div>
-<div>XP: <span id="xp">0</span></div>
-<div>Combo: <span id="combo">0</span></div>
-</header>
-
-<section>
-<button id="startBtn">🚀 START GAME</button>
-<div id="levelTitle">Loading...</div>
-</section>
-
-<div id="board"></div>
-
-<audio id="successSound"></audio>
-<audio id="failSound"></audio>
-
 <script src="https://sdk.minepi.com/pi-sdk.js"></script>
-<script src="levels.js"></script>
-<script src="game.js"></script>
 
 <script>
-const PiStatus=document.getElementById("piStatus");
-const PiLoginBtn=document.getElementById("piLoginBtn");
+let PiUser = null;
+let accessToken = null;
+let piReady = false;
 
-let PiUser=null;
-let accessToken=null;
+const status = document.getElementById("piStatus");
+const btn = document.getElementById("piLoginBtn");
 
 async function initPi(){
-  await Pi.init({version:"2.0"});
-  PiStatus.innerText="Pi: Ready";
-  tryAutoLogin();
+    try{
+        await Pi.init({version:"2.0"});
+        piReady = true;
+        status.innerText = "Pi: Ready (Optional)";
+        autoLogin();
+    }catch(e){
+        status.innerText = "Pi: Offline Mode";
+    }
 }
 
-async function login(){
-  try{
-    PiStatus.innerText="Authenticating...";
-    const auth = await Pi.authenticate(["username"]);
-    accessToken = auth.accessToken;
+async function loginPi(){
+    if(!piReady) return;
 
-    const res = await fetch("/api/auth/verify",{
-      method:"POST",
-      headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({accessToken})
-    });
+    try{
+        const auth = await Pi.authenticate(["username"]);
+        accessToken = auth.accessToken;
 
-    const data = await res.json();
-    if(!data.ok) throw new Error("auth failed");
+        const res = await fetch("/api/auth/verify",{
+            method:"POST",
+            headers:{"Content-Type":"application/json"},
+            body:JSON.stringify({accessToken})
+        });
 
-    PiUser = data.user;
+        const data = await res.json();
 
-    window.setPiUser?.(PiUser);
+        if(data.ok){
+            PiUser = data.user;
+            window.__PI_USER__ = PiUser;
 
-    PiStatus.innerText="Pi: "+PiUser.username;
-    PiLoginBtn.style.display="none";
+            status.innerText = "Pi: " + PiUser.username;
+            btn.style.display = "none";
+        }
 
-  }catch(e){
-    PiStatus.innerText="Pi: Auth Failed";
-  }
+    }catch(e){
+        console.log("Pi login skipped");
+        status.innerText = "Pi: Offline Mode";
+    }
 }
 
-async function tryAutoLogin(){
-  try{ await login(); }catch(e){}
+async function autoLogin(){
+    try{ await loginPi(); }catch(e){}
 }
 
-PiLoginBtn.onclick=login;
-window.onload=initPi;
+btn.onclick = loginPi;
+
+window.addEventListener("load", initPi);
 </script>
-
-</body>
-</html>
