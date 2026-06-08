@@ -1,0 +1,109 @@
+:root {
+    --pi-gold: #ffb300;
+    --pi-bg: #0a0c12;
+    --pi-surface: #131620;
+    --pi-border: #1e2235;
+}
+
+/* ===== 全局 ===== */
+body {
+    margin: 0;
+    background: var(--pi-bg);
+    color: white;
+    font-family: "Noto Sans SC", sans-serif;
+    overflow-x: hidden;
+}
+
+/* ===== header ===== */
+header {
+    text-align: center;
+    padding: 12px;
+}
+
+/* ===== 状态卡（必须不挡游戏）===== */
+#status-card {
+    position: relative;
+    z-index: 1;
+}
+
+/* ===== 游戏主区域 ===== */
+#board {
+    display: grid !important;   /* ⭐关键：强制显示 */
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+    max-width: 680px;
+    margin: 10px auto;
+    padding: 10px;
+    position: relative;
+    z-index: 10; /* ⭐确保在上层 */
+}
+
+/* ===== 卡片 ===== */
+.card {
+    height: 90px;
+    background: var(--pi-surface);
+    border: 1px solid var(--pi-border);
+    border-radius: 12px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    transition: 0.2s;
+    user-select: none;
+}
+
+.card:hover {
+    transform: scale(1.05);
+    border-color: var(--pi-gold);
+}
+
+.card.selected {
+    background: rgba(255,179,0,0.1);
+    border-color: var(--pi-gold);
+}
+
+.card.matched {
+    opacity: 0;
+    transform: scale(0.5);
+    pointer-events: none;
+}
+
+/* ===== emoji / text ===== */
+.emoji { font-size: 32px; }
+.word { font-weight: bold; }
+.cn { font-size: 12px; opacity: 0.7; }
+
+/* ===== 按钮 ===== */
+button {
+    padding: 10px 18px;
+    border-radius: 20px;
+    border: none;
+    cursor: pointer;
+}
+
+button:hover {
+    transform: scale(1.05);
+}
+
+/* ===== 弹窗 ===== */
+#resultModal {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.8);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 999;
+}
+
+.hidden {
+    display: none !important;
+}
+
+.result-box {
+    background: #131620;
+    padding: 20px;
+    border-radius: 14px;
+    text-align: center;
+}

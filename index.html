@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+
+<html lang="zh">
+
+<head>
+
+<meta charset="UTF-8">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Pi Word Match Hero</title>
+
+<script src="https://sdk.minepi.com/pi-sdk.js"></script>
+
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Noto+Sans+SC:wght@300;400;500&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="style.css">
+
+</head>
+
+<body>
+
+<header>
+
+    <h1>🔤 Pi Word Match Hero</h1>
+
+    <div class="top-bar">
+
+        <span>⚡ XP: <b id="xpVal">0</b></span>
+
+        <span>🔥 Combo: <b id="comboVal">0</b></span>
+
+        <span>🏆 关卡: <b id="lvlVal">1</b></span>
+
+    </div>
+
+</header>
+
+<!-- 状态卡（会自动隐藏） -->
+
+<div id="status-card" style="
+
+    max-width:420px;margin:14px auto;
+
+    background:#131620;border:1px solid #1e2235;
+
+    border-radius:12px;padding:14px 18px;
+
+    display:flex;align-items:center;gap:10px;">
+
+    <span id="status-text">加载中...</span>
+
+</div>
+
+<!-- 登录按钮（可选） -->
+
+<div style="text-align:center;margin-bottom:10px;">
+
+    <button onclick="handleSignIn()" style="
+
+        background:linear-gradient(135deg,#ffb300,#c88a00);
+
+        border:none;padding:10px 20px;border-radius:30px;
+
+        cursor:pointer;">
+
+        Pi登录（可选）
+
+    </button>
+
+    <button onclick="startGame()" style="
+
+        background:#2d7dff;color:#fff;
+
+        border:none;padding:10px 20px;border-radius:30px;
+
+        cursor:pointer;margin-left:10px;">
+
+        进入游戏
+
+    </button>
+
+</div>
+
+<!-- 游戏用户 -->
+
+<div id="user-card" style="display:none;text-align:center;margin-bottom:10px;">
+
+    <div id="user-name">游客模式</div>
+
+</div>
+
+<!-- 游戏区 -->
+
+<div id="board"></div>
+
+<!-- 结果 -->
+
+<div id="resultModal" class="hidden">
+
+    <div class="result-box">
+
+        <h2 id="resultTitle">完成</h2>
+
+        <div class="xp-badge">+<span id="resultXP">0</span></div>
+
+        <button onclick="nextLevel()">下一关</button>
+
+    </div>
+
+</div>
+
+<script src="words.js"></script>
+
+<script src="game.js"></script>
+
+<script>
+
+let currentUser = null;
+
+/* ================= UI ================= */
+
+function setStatus(msg) {
+
+    const el = document.getElementById("status-text");
+
+    if (el) el.textContent = msg;
+
+}
+
+/* ================= 自动进入关键修复 ================= */
+
+window.addEventListener("load", () => {
+
+    setStatus("进入游戏中...");
+
+    // ⭐ 关键：自动启动游戏（防卡死核心）
+
+    setTimeout(() => {
+
+        if (typeof startGame === "function") {
+
+            startGame();
+
+        }
+
+        // ⭐ 隐藏状态卡（关键）
+
+        const status = document.getElementById("status-card");
+
+        if (status) status.style.display = "none";
+
+    }, 300);
+
+});
+
+/* ================= Pi（可选） ================= */
+
+async function handleSignIn() {
+
+    try {
+
+        if (!window.Pi) return;
+
+        const auth = await Pi.authenticate(['username']);
+
+        currentUser = auth.user;
+
+        document.getElementById("user-card").style.display = "block";
+
+        document.getElementById("user-name").innerText = auth.user.username;
+
+    } catch (e) {
+
+        alert("Pi登录失败，但可继续游戏");
+
+    }
+
+}
+
+</script>
+
+</body>
+
+</html>
