@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pi Word Match Hero</title>
+
+    <!-- Pi SDK（必须最先加载）-->
+    <script src="https://sdk.minepi.com/pi-sdk.js"></script>
+
+    <!-- 字体 -->
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Noto+Sans+SC:wght@300;400;500&display=swap" rel="stylesheet">
+
+    <!-- 样式 -->
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- ═══ 顶部 Header ═══ -->
+<header>
+    <h1>🔤 Pi Word Match Hero</h1>
+    <div class="top-bar">
+        <span>⚡ XP: <b id="xpVal">0</b></span>
+        <span>🔥 Combo: <b id="comboVal">0</b></span>
+        <span>🏆 关卡: <b id="lvlVal">1</b></span>
+    </div>
+</header>
+
+<!-- ═══ 游戏主面板 ═══ -->
+<div class="game-panel">
+    <div id="levelTitle"></div>
+</div>
+
+<!-- ═══ 状态卡（登录流程）═══ -->
+<div id="status-card" style="
+    max-width:420px;margin:14px auto;
+    background:#131620;border:1px solid #1e2235;border-radius:12px;
+    padding:14px 18px;display:flex;align-items:center;gap:10px;">
+    <div class="spinner" id="status-icon"></div>
+    <span id="status-text" style="font-size:13px;">正在初始化 Pi SDK…</span>
+</div>
+
+<!-- 手动登录按钮 -->
+<div style="text-align:center;margin-bottom:8px;">
+    <button id="signin-btn" style="display:none;background:linear-gradient(135deg,#ffb300,#c88a00);
+        color:#0a0c12;font-family:'Orbitron',monospace;font-size:13px;font-weight:700;
+        border:none;border-radius:30px;padding:12px 28px;cursor:pointer;"
+        onclick="handleSignIn()">
+        使用 Pi 账户登录
+    </button>
+</div>
+
+<!-- ═══ 已登录 · 用户信息 + 开始按钮 ═══ -->
+<div id="user-card" style="
+    display:none;flex-direction:column;gap:12px;
+    max-width:420px;margin:0 auto 12px;padding:18px;
+    background:#131620;border:1px solid #1e2235;border-radius:12px;text-align:center;">
+    <div style="display:flex;align-items:center;gap:12px;justify-content:center;">
+        <div id="user-avatar" style="
+            width:44px;height:44px;border-radius:50%;
+            background:linear-gradient(135deg,#ffb300,#c88a00);
+            display:flex;align-items:center;justify-content:center;
+            font-family:'Orbitron',monospace;font-size:20px;font-weight:900;color:#0a0c12;">
+            π
+        </div>
+        <div>
+            <div id="user-name" style="font-family:'Orbitron',monospace;font-size:15px;color:#ffb300;">—</div>
+            <div style="font-size:11px;color:#5a6080;letter-spacing:1px;">Pi Pioneer · 已验证</div>
+        </div>
+    </div>
+    <button id="startBtn" onclick="startGame()">🚀 开始游戏</button>
+</div>
+
+<!-- ═══ 棋盘 ═══ -->
+<div id="board"></div>
+
+<!-- ═══ 通关弹窗 ═══ -->
+<div id="resultModal" class="hidden">
+    <div class="result-box">
+        <h2 id="resultTitle">🎉 过关！</h2>
+        <p>本局累计</p>
+        <div class="xp-badge">+<span id="resultXP">0</span> XP</div>
+        <button id="nextBtn">下一关 →</button>
+    </div>
+</div>
+
+<!-- ═══ 脚本 ═══ -->
+<!-- 词库必须在 game.js 之前 -->
+<script src="words.js"></script>
+<script src="game.js"></script>
+
+<script>
+/* ───────────────────────────────────────────
+   Pi Network 认证逻辑（内联，依赖 Pi SDK）
+   ─────────────────────────────────────────── */
+"use strict";
+
+let currentUser   = null;
+let accessToken   = null;
+let piInitialized = false;
+
+/* —— UI 工具 —— */
+function setStatus(msg, type = 'loading') {
+    const card   = document.getElementById('status-card');
+    const iconEl = document.getElementById('status-icon');
+    const textEl = document.getElementById('status-text');
+    textEl.textContent = msg;
+    card.style.borderColor = type === 'success' ? '#4caf50'
+                           : type === 'error'   ? '#f44336'
+                                                : '#1e2235';
+    if (type === 'loading') {
+        iconEl.className = 'spinner';
+    } else {
+        iconEl.className = '';
+        iconEl.style.cssText =
+            `width:10px;height:10px;border-radius:50%;flex-shrink:0;background:${
+                type === 'success' ? '#4caf50' : '#f44336'
+            }`;
+    }
+}
+
+function showSignInButton(show) {
+    document.getElementById('signin-btn').style.display = show ? 'inline-block' : 'none';
+}
+
+function showUserCard(user) {
+    document.getElementById('user-name').textContent   = user.username;
+    document.getElementById('user-avatar').textContent = user.username.charAt(0).toUpperCase();
+    document.getElementById('user-card').style.display = 'flex';
+}
+
+/* —— Pi SDK 初始化 —— */
+async function initPiSdk() {
+    if (piInitialized) return;
+    await new Promise((resolve, reject) => {
+        if (typeof window.Pi !== 'undefined') { resolve(); return; }
+        const t  = Date.now();
+        const id = setInterval(() => {
+            if (typeof window.Pi !== 'undefined') { clearInterval(id); resolve(); }
+            else if (Date.now() - t > 8000) { clearInterval(id); reject(new Error('Pi SDK 加载超时')); }
+        }, 80);
+    });
+    await window.Pi.init({ version: "1.5", sandbox: false });
+    piInitialized = true;
+}
+
+/* —— 未完成订单（Pi SDK 强制要求）—— */
+function onIncompletePaymentFound(payment) {
+    console.warn('[Pi] 未完成订单:', payment.identifier);
+    fetch('/api/payments/incomplete', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ paymentId: payment.identifier, payment })
+    }).catch(console.error);
+}
+
+/* —— 核心认证流程 —— */
+async function authenticate() {
+    setStatus('正在连接 Pi 网络…', 'loading');
+    showSignInButton(false);
+    try {
+        await initPiSdk();
+        setStatus('正在请求账户授权…', 'loading');
+
+        const auth  = await window.Pi.authenticate(['username'], onIncompletePaymentFound);
+        accessToken = auth.accessToken;
+        currentUser = auth.user;
+
+        setStatus('正在验证身份…', 'loading');
+
+        const res = await fetch('/api/auth/validate', {
+            method:  'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body:    JSON.stringify({ accessToken })
+        });
+        if (!res.ok) throw new Error(`后端响应异常 (${res.status})`);
+        const data = await res.json();
+        if (!data.success) throw new Error(data.message || '后端验证失败');
+
+        setStatus(`✓ 欢迎，${currentUser.username}`, 'success');
+        showUserCard(currentUser);
+
+    } catch (err) {
+        console.error('[Pi] 认证失败:', err);
+        const cancelled = err.message?.toLowerCase().includes('cancel');
+        setStatus(cancelled ? '已取消，点击下方重试' : `认证失败：${err.message}`, 'error');
+        showSignInButton(true);
+    }
+}
+
+async function handleSignIn() {
+    const btn = document.getElementById('signin-btn');
+    btn.disabled = true;
+    await authenticate();
+    btn.disabled = false;
+}
+
+/* —— 页面加载自动触发 —— */
+window.addEventListener('load', authenticate);
+</script>
+
+<!-- Spinner 样式（小型内联，不污染 style.css）-->
+<style>
+.spinner {
+    display: inline-block;
+    width: 14px; height: 14px;
+    border: 2px solid rgba(255,179,0,.2);
+    border-top-color: #ffb300;
+    border-radius: 50%;
+    animation: spin .7s linear infinite;
+    flex-shrink: 0;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+</style>
+
+</body>
+</html>

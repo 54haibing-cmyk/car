@@ -1,0 +1,341 @@
+/* ═══════════════════════════════════════════════════════
+   style.css  –  Word Match Hero  （Pi Network 游戏主界面）
+   ═══════════════════════════════════════════════════════ */
+
+/* ─── CSS 变量（与 index.html 保持一致）───────────────── */
+:root {
+    --pi-gold:       #ffb300;
+    --pi-gold-dim:   #c88a00;
+    --pi-bg:         #0a0c12;
+    --pi-surface:    #131620;
+    --pi-surface2:   #1a1e2e;
+    --pi-border:     #1e2235;
+    --pi-border-lit: #2e3450;
+    --pi-text:       #e8eaf0;
+    --pi-muted:      #5a6080;
+    --pi-success:    #4caf50;
+    --pi-error:      #f44336;
+    --pi-blue:       #3a7bd5;
+    --radius-card:   14px;
+    --transition:    .22s ease;
+}
+
+/* ─── Reset ────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+/* ─── Body ──────────────────────────────────────────────── */
+body {
+    min-height: 100vh;
+    font-family: "Noto Sans SC", "Segoe UI", sans-serif;
+    background: var(--pi-bg);
+    color: var(--pi-text);
+    overflow-x: hidden;
+    position: relative;
+}
+
+/* 背景网格 */
+body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+        linear-gradient(rgba(255,179,0,.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,179,0,.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+}
+
+/* ─── 顶部 Header ───────────────────────────────────────── */
+header {
+    position: relative;
+    z-index: 1;
+    text-align: center;
+    padding: 16px 12px 10px;
+    background: rgba(10,12,18,.85);
+    border-bottom: 1px solid var(--pi-border);
+    backdrop-filter: blur(8px);
+}
+
+h1 {
+    font-family: "Orbitron", monospace;
+    font-size: 1.3rem;
+    font-weight: 700;
+    letter-spacing: 2px;
+    color: var(--pi-gold);
+    text-shadow: 0 0 18px rgba(255,179,0,.4);
+    margin-bottom: 10px;
+}
+
+/* ─── Top Bar（XP / Combo / 关卡）───────────────────────── */
+.top-bar {
+    display: flex;
+    justify-content: center;
+    gap: 18px;
+    flex-wrap: wrap;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--pi-muted);
+}
+
+.top-bar span b {
+    color: var(--pi-gold);
+    font-family: "Orbitron", monospace;
+}
+
+/* ─── 游戏主面板 ─────────────────────────────────────────── */
+.game-panel {
+    position: relative;
+    z-index: 1;
+    text-align: center;
+    padding: 10px 0 4px;
+}
+
+#levelTitle {
+    font-family: "Orbitron", monospace;
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--pi-gold);
+    letter-spacing: 1px;
+}
+
+/* ─── 按钮 ───────────────────────────────────────────────── */
+button {
+    border: none;
+    border-radius: 30px;
+    cursor: pointer;
+    padding: 11px 26px;
+    font-family: "Orbitron", monospace;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    transition: transform var(--transition), box-shadow var(--transition), opacity var(--transition);
+}
+
+button:hover  { transform: translateY(-2px); }
+button:active { transform: scale(.96); }
+
+#startBtn {
+    background: linear-gradient(135deg, var(--pi-gold), var(--pi-gold-dim));
+    color: #0a0c12;
+    box-shadow: 0 4px 20px rgba(255,179,0,.3);
+    margin-top: 8px;
+}
+
+#startBtn:hover {
+    box-shadow: 0 6px 28px rgba(255,179,0,.45);
+}
+
+/* ─── 棋盘 ───────────────────────────────────────────────── */
+#board {
+    position: relative;
+    z-index: 1;
+    width: 96%;
+    max-width: 680px;
+    margin: 12px auto;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+}
+
+/* ─── 卡片 ───────────────────────────────────────────────── */
+.card {
+    height: 100px;
+    background: var(--pi-surface);
+    border: 1px solid var(--pi-border);
+    border-radius: var(--radius-card);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    cursor: pointer;
+    padding: 6px;
+    transition:
+        transform var(--transition),
+        border-color var(--transition),
+        box-shadow var(--transition),
+        opacity .35s ease;
+    user-select: none;
+}
+
+.card:hover {
+    transform: translateY(-3px);
+    border-color: var(--pi-border-lit);
+    box-shadow: 0 4px 20px rgba(255,179,0,.12);
+}
+
+.card.selected {
+    border-color: var(--pi-gold);
+    background: rgba(255,179,0,.08);
+    box-shadow: 0 0 22px rgba(255,179,0,.35);
+    transform: translateY(-3px) scale(1.03);
+}
+
+.card.matched {
+    opacity: 0;
+    transform: scale(0.6);
+    pointer-events: none;
+    transition: opacity .4s ease, transform .4s ease;
+}
+
+/* ─── 卡片内容 ───────────────────────────────────────────── */
+.emoji {
+    font-size: 38px;
+    line-height: 1;
+    margin-bottom: 2px;
+}
+
+.word {
+    font-family: "Orbitron", monospace;
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--pi-text);
+    line-height: 1.2;
+}
+
+.cn {
+    font-size: 13px;
+    font-weight: 500;
+    color: #7ab8d9;
+    margin-top: 3px;
+}
+
+/* ─── 通关弹窗 ───────────────────────────────────────────── */
+#resultModal {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,.82);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 999;
+    backdrop-filter: blur(4px);
+    animation: fadeIn .25s ease;
+}
+
+.hidden { display: none !important; }
+
+.result-box {
+    background: var(--pi-surface);
+    border: 1px solid var(--pi-border-lit);
+    border-radius: 20px;
+    padding: 28px 24px;
+    width: 300px;
+    text-align: center;
+    box-shadow: 0 0 40px rgba(255,179,0,.2), 0 20px 60px rgba(0,0,0,.5);
+    animation: popUp .3s cubic-bezier(.34,1.56,.64,1) both;
+}
+
+.result-box h2 {
+    font-family: "Orbitron", monospace;
+    font-size: 18px;
+    color: var(--pi-gold);
+    margin-bottom: 10px;
+}
+
+.result-box p {
+    font-size: 14px;
+    color: var(--pi-muted);
+    margin-bottom: 6px;
+}
+
+.result-box .xp-badge {
+    display: inline-block;
+    margin: 8px 0 16px;
+    padding: 6px 20px;
+    border-radius: 20px;
+    background: rgba(255,179,0,.12);
+    border: 1px solid rgba(255,179,0,.3);
+    font-family: "Orbitron", monospace;
+    font-size: 22px;
+    font-weight: 900;
+    color: var(--pi-gold);
+}
+
+#nextBtn {
+    background: linear-gradient(135deg, #ff9800, #ffeb3b);
+    color: #1a1200;
+    width: 100%;
+    padding: 13px;
+    border-radius: 12px;
+    font-size: 14px;
+}
+
+/* ─── 动画 ───────────────────────────────────────────────── */
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+}
+
+@keyframes popUp {
+    from { opacity: 0; transform: scale(.85) translateY(20px); }
+    to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+@keyframes twinkle {
+    0%, 100% { opacity: .15; }
+    50%       { opacity:  .9; }
+}
+
+/* ─── 星空装饰（从 index 继承的星星效果）────────────────── */
+.star {
+    position: fixed;
+    width: 2px;
+    height: 2px;
+    background: white;
+    border-radius: 50%;
+    animation: twinkle 2s infinite;
+}
+
+/* ─── 响应式 ─────────────────────────────────────────────── */
+@media (max-width: 600px) {
+    #board {
+        gap: 7px;
+    }
+
+    .card {
+        height: 86px;
+    }
+
+    .emoji {
+        font-size: 30px;
+    }
+
+    .word {
+        font-size: 13px;
+    }
+
+    .cn {
+        font-size: 12px;
+    }
+
+    h1 {
+        font-size: 1.1rem;
+    }
+
+    .top-bar {
+        font-size: 12px;
+        gap: 12px;
+    }
+}
+
+@media (max-width: 380px) {
+    #board {
+        grid-template-columns: repeat(4, 1fr);
+        gap: 5px;
+    }
+
+    .card {
+        height: 76px;
+        border-radius: 10px;
+    }
+
+    .emoji {
+        font-size: 26px;
+    }
+
+    .word {
+        font-size: 11px;
+    }
+}
