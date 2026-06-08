@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pi Network 游戏</title>
+    <script src="https://sdk.minepi.com/pi-sdk.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Noto+Sans+SC:wght@300;400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --pi-gold: #ffb300;
+            --pi-gold-dim: #c88a00;
+            --pi-bg: #0a0c12;
+            --pi-surface: #131620;
+            --pi-border: #1e2235;
+            --pi-text: #e8eaf0;
+            --pi-muted: #5a6080;
+            --pi-success: #4caf50;
+            --pi-error: #f44336;
+            --pi-blue: #3a7bd5;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Noto Sans SC', sans-serif;
+            background: var(--pi-bg);
+            color: var(--pi-text);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            overflow-x: hidden;
+        }
+
+        /* ── 背景网格 ── */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background-image:
+                linear-gradient(rgba(255,179,0,0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255,179,0,0.03) 1px, transparent 1px);
+            background-size: 40px 40px;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .wrapper {
+            position: relative;
+            z-index: 1;
+            width: 100%;
+            max-width: 480px;
+            padding: 24px 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 24px;
+        }
+
+        /* ── Logo / Header ── */
+        .logo-area {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+            animation: fadeDown 0.6s ease both;
+        }
+
+        .pi-symbol {
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 35% 35%, #ffe082, var(--pi-gold), #a06000);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Orbitron', monospace;
+            font-size: 28px;
+            font-weight: 900;
+            color: #0a0c12;
+            box-shadow: 0 0 32px rgba(255,179,0,0.35), 0 0 8px rgba(255,179,0,0.2);
+        }
+
+        h1 {
+            font-family: 'Orbitron', monospace;
+            font-size: 22px;
+            font-weight: 700;
+            letter-spacing: 2px;
+            color: var(--pi-gold);
+            text-transform: uppercase;
+        }
+
+        .subtitle {
+            font-size: 12px;
+            color: var(--pi-muted);
+            letter-spacing: 3px;
+            text-transform: uppercase;
+        }
+
+        /* ── 状态卡片 ── */
+        #status-card {
+            width: 100%;
+            background: var(--pi-surface);
+            border: 1px solid var(--pi-border);
+            border-radius: 12px;
+            padding: 16px 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            animation: fadeUp 0.5s ease 0.15s both;
+            transition: border-color 0.3s;
+        }
+
+        #status-card.success { border-color: var(--pi-success); }
+        #status-card.error   { border-color: var(--pi-error); }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--pi-gold);
+            flex-shrink: 0;
+            animation: pulse 1.5s infinite;
+        }
+
+        .status-dot.static { animation: none; }
+        .status-dot.green  { background: var(--pi-success); }
+        .status-dot.red    { background: var(--pi-error); }
+
+        #status-text {
+            font-size: 13px;
+            color: var(--pi-text);
+            line-height: 1.5;
+        }
+
+        /* ── 按钮 ── */
+        .btn {
+            width: 100%;
+            padding: 15px;
+            border-radius: 10px;
+            border: none;
+            font-family: 'Orbitron', monospace;
+            font-size: 13px;
+            font-weight: 700;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: transform 0.15s, box-shadow 0.15s, opacity 0.2s;
+            animation: fadeUp 0.5s ease 0.25s both;
+        }
+
+        .btn:active { transform: scale(0.97); }
+        .btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #ffb300, #e6a000);
+            color: #0a0c12;
+            box-shadow: 0 4px 20px rgba(255,179,0,0.3);
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            box-shadow: 0 6px 28px rgba(255,179,0,0.45);
+            transform: translateY(-1px);
+        }
+
+        .btn-secondary {
+            background: transparent;
+            color: var(--pi-gold);
+            border: 1px solid var(--pi-gold);
+        }
+
+        .btn-secondary:hover:not(:disabled) {
+            background: rgba(255,179,0,0.06);
+        }
+
+        /* ── 用户卡 ── */
+        #user-card {
+            width: 100%;
+            background: var(--pi-surface);
+            border: 1px solid var(--pi-border);
+            border-radius: 12px;
+            padding: 20px;
+            display: none;
+            flex-direction: column;
+            gap: 12px;
+            animation: fadeUp 0.4s ease both;
+        }
+
+        .user-row {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .user-avatar {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--pi-gold), #c88a00);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Orbitron', monospace;
+            font-size: 18px;
+            font-weight: 900;
+            color: #0a0c12;
+            flex-shrink: 0;
+        }
+
+        .user-info-text { display: flex; flex-direction: column; gap: 2px; }
+
+        .user-name {
+            font-family: 'Orbitron', monospace;
+            font-size: 15px;
+            font-weight: 700;
+            color: var(--pi-gold);
+        }
+
+        .user-tag {
+            font-size: 11px;
+            color: var(--pi-muted);
+            letter-spacing: 1px;
+        }
+
+        /* ── 游戏区 ── */
+        #game-container {
+            width: 100%;
+            display: none;
+            flex-direction: column;
+            gap: 16px;
+            animation: fadeUp 0.4s ease both;
+        }
+
+        .game-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .game-card {
+            background: var(--pi-surface);
+            border: 1px solid var(--pi-border);
+            border-radius: 10px;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            cursor: pointer;
+            transition: border-color 0.2s, transform 0.15s;
+        }
+
+        .game-card:hover {
+            border-color: var(--pi-gold);
+            transform: translateY(-2px);
+        }
+
+        .game-card-icon { font-size: 26px; }
+        .game-card-title { font-size: 13px; font-weight: 500; }
+        .game-card-sub   { font-size: 11px; color: var(--pi-muted); }
+
+        /* ── 分隔线 ── */
+        .divider {
+            width: 100%;
+            border: none;
+            border-top: 1px solid var(--pi-border);
+        }
+
+        /* ── 动画 ── */
+        @keyframes fadeDown {
+            from { opacity: 0; transform: translateY(-16px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(12px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50%       { opacity: 0.35; }
+        }
+
+        /* ── Loading spinner ── */
+        .spinner {
+            display: inline-block;
+            width: 14px;
+            height: 14px;
+            border: 2px solid rgba(255,179,0,0.25);
+            border-top-color: var(--pi-gold);
+            border-radius: 50%;
+            animation: spin 0.7s linear infinite;
+            flex-shrink: 0;
+        }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+<div class="wrapper">
+
+    <!-- Header -->
+    <div class="logo-area">
+        <div class="pi-symbol">π</div>
+        <h1>Pi 游戏中心</h1>
+        <p class="subtitle">Pioneer Gaming Platform</p>
+    </div>
+
+    <!-- 状态栏 -->
+    <div id="status-card">
+        <div class="spinner" id="status-icon"></div>
+        <span id="status-text">正在初始化 Pi SDK…</span>
+    </div>
+
+    <!-- 手动登录按钮（自动触发失败时显示） -->
+    <button id="signin-btn" class="btn btn-primary" style="display:none;" onclick="handleSignIn()">
+        使用 Pi 账户登录
+    </button>
+
+    <!-- 已登录：用户信息 -->
+    <div id="user-card">
+        <div class="user-row">
+            <div class="user-avatar" id="user-avatar">π</div>
+            <div class="user-info-text">
+                <div class="user-name" id="user-name">—</div>
+                <div class="user-tag">Pi Pioneer · 已验证</div>
+            </div>
+        </div>
+        <hr class="divider">
+        <button class="btn btn-secondary" onclick="startGame()" id="start-btn">
+            进入游戏
+        </button>
+    </div>
+
+    <!-- 游戏选择区 -->
+    <div id="game-container">
+        <div class="game-grid">
+            <div class="game-card" onclick="loadLevel(0)">
+                <div class="game-card-icon">🧩</div>
+                <div class="game-card-title">文字关卡</div>
+                <div class="game-card-sub">从第 1 关开始</div>
+            </div>
+            <div class="game-card" onclick="loadLevel(-1)">
+                <div class="game-card-icon">🏆</div>
+                <div class="game-card-title">继续挑战</div>
+                <div class="game-card-sub">上次进度</div>
+            </div>
+            <div class="game-card" onclick="openLeaderboard()">
+                <div class="game-card-icon">📊</div>
+                <div class="game-card-title">排行榜</div>
+                <div class="game-card-sub">全球 Pioneer</div>
+            </div>
+            <div class="game-card" onclick="openShop()">
+                <div class="game-card-icon">🛒</div>
+                <div class="game-card-title">道具商店</div>
+                <div class="game-card-sub">使用 Pi 购买</div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<script>
+// ═══════════════════════════════════════════════
+//  状态
+// ═══════════════════════════════════════════════
+let currentUser   = null;
+let accessToken   = null;
+let piInitialized = false;
+
+// ═══════════════════════════════════════════════
+//  UI 工具
+// ═══════════════════════════════════════════════
+function setStatus(msg, type = 'loading') {
+    const card    = document.getElementById('status-card');
+    const iconEl  = document.getElementById('status-icon');
+    const textEl  = document.getElementById('status-text');
+
+    textEl.textContent = msg;
+    card.className = '';                    // reset
+    iconEl.className = '';
+
+    if (type === 'loading') {
+        iconEl.className = 'spinner';
+    } else if (type === 'success') {
+        card.classList.add('success');
+        iconEl.className = 'status-dot static green';
+    } else if (type === 'error') {
+        card.classList.add('error');
+        iconEl.className = 'status-dot static red';
+    } else {
+        iconEl.className = 'status-dot';    // pulse gold
+    }
+}
+
+function showSignInButton(show) {
+    document.getElementById('signin-btn').style.display = show ? 'block' : 'none';
+}
+
+function showUserCard(user) {
+    const card   = document.getElementById('user-card');
+    const nameEl = document.getElementById('user-name');
+    const avEl   = document.getElementById('user-avatar');
+
+    nameEl.textContent = user.username;
+    avEl.textContent   = user.username.charAt(0).toUpperCase();
+    card.style.display = 'flex';
+}
+
+// ═══════════════════════════════════════════════
+//  1. Pi SDK 初始化 — 完整 await
+// ═══════════════════════════════════════════════
+async function initPiSdk() {
+    if (piInitialized) return true;
+
+    // 等待 window.Pi 可用（脚本异步加载时可能还没挂载）
+    await new Promise((resolve, reject) => {
+        if (typeof window.Pi !== 'undefined') { resolve(); return; }
+        const t = Date.now();
+        const id = setInterval(() => {
+            if (typeof window.Pi !== 'undefined') { clearInterval(id); resolve(); }
+            else if (Date.now() - t > 6000)       { clearInterval(id); reject(new Error('Pi SDK 脚本加载超时')); }
+        }, 80);
+    });
+
+    // 必须 await init，不能只 .then()
+    await window.Pi.init({ version: "1.5", sandbox: false });
+    piInitialized = true;
+    return true;
+}
+
+// ═══════════════════════════════════════════════
+//  2. 未完成订单处理（SDK 强制要求传入此回调）
+// ═══════════════════════════════════════════════
+function onIncompletePaymentFound(payment) {
+    console.warn('[Pi] 发现未完成订单:', payment.identifier);
+    // 通知后端检查并处理该订单（complete 或 cancel）
+    fetch('/api/payments/incomplete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ paymentId: payment.identifier, payment })
+    }).catch(err => console.error('[Pi] 上报未完成订单失败:', err));
+}
+
+// ═══════════════════════════════════════════════
+//  3. 核心认证流程
+// ═══════════════════════════════════════════════
+async function authenticate() {
+    setStatus('正在连接 Pi 网络…', 'loading');
+    showSignInButton(false);
+
+    try {
+        // Step 1 — 初始化
+        await initPiSdk();
+        setStatus('正在请求账户授权…', 'loading');
+
+        // Step 2 — 前端认证，获取 accessToken
+        const auth = await window.Pi.authenticate(['username'], onIncompletePaymentFound);
+        accessToken = auth.accessToken;
+        currentUser = auth.user;
+
+        setStatus('正在验证身份…', 'loading');
+
+        // Step 3 — 后端验证：/api/auth/validate 内部调用
+        //           GET https://api.minepi.com/v2/me
+        //           Authorization: Bearer <accessToken>
+        const res = await fetch('/api/auth/validate', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ accessToken })
+        });
+
+        if (!res.ok) throw new Error(`后端响应异常 (${res.status})`);
+        const data = await res.json();
+        if (!data.success) throw new Error(data.message || '后端验证失败');
+
+        // Step 4 — 成功
+        setStatus(`✓ 欢迎回来，${currentUser.username}`, 'success');
+        showUserCard(currentUser);
+
+    } catch (err) {
+        console.error('[Pi] 认证失败:', err);
+
+        // 用户主动取消 vs 环境错误
+        const userCancelled = err.message?.toLowerCase().includes('cancel');
+        setStatus(
+            userCancelled ? '已取消登录，点击下方按钮重试' : `认证失败：${err.message}`,
+            'error'
+        );
+        showSignInButton(true);
+    }
+}
+
+// ═══════════════════════════════════════════════
+//  4. 按钮点击入口（防止重复点击）
+// ═══════════════════════════════════════════════
+async function handleSignIn() {
+    const btn = document.getElementById('signin-btn');
+    btn.disabled = true;
+    await authenticate();
+    btn.disabled = false;
+}
+
+// ═══════════════════════════════════════════════
+//  5. 游戏逻辑
+// ═══════════════════════════════════════════════
+function startGame() {
+    document.getElementById('user-card').style.display     = 'none';
+    document.getElementById('game-container').style.display = 'flex';
+}
+
+function loadLevel(level) {
+    const name = currentUser ? currentUser.username : '游客';
+    console.log(`[Game] 加载关卡 ${level}，玩家: ${name}`);
+    // TODO: 调用你的游戏逻辑
+}
+
+function openLeaderboard() {
+    console.log('[Game] 打开排行榜');
+    // TODO
+}
+
+function openShop() {
+    console.log('[Game] 打开道具商店');
+    // TODO: 接入 Pi Payment 流程
+}
+
+// ═══════════════════════════════════════════════
+//  6. 入口 — 页面加载后自动触发
+// ═══════════════════════════════════════════════
+window.addEventListener('load', () => {
+    authenticate();   // 自动触发，失败后显示手动按钮
+});
+</script>
+</body>
+</html>
