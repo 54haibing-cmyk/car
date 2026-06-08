@@ -1,0 +1,27 @@
+{
+  "name": "pi-word-match-hero",
+  "version": "1.0.0",
+  "description": "Pi Network Word Match Game - English Learning Game",
+  "type": "module",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "keywords": [
+    "pi-network",
+    "game",
+    "english-learning",
+    "word-match",
+    "express"
+  ],
+  "author": "pi-game-dev",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.19.2",
+    "cors": "^2.8.5"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
