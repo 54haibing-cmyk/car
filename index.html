@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pi Network 连连看游戏</title>
+    <script src="https://sdk.minepi.com/pi-sdk.js"></script>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            text-align: center; 
+            padding: 20px; 
+            background: #111; 
+            color: #fff;
+        }
+        button { 
+            padding: 15px 30px; 
+            font-size: 18px; 
+            margin: 10px; 
+            background: #4a90e2; 
+            color: white; 
+            border: none; 
+            border-radius: 8px; 
+            cursor: pointer;
+        }
+        #status { margin: 15px; padding: 12px; background: #222; border-radius: 6px; }
+        #game-container { margin-top: 30px; }
+        /* 游戏卡片样式 */
+        .game-card {
+            width: 80px;
+            height: 80px;
+            margin: 8px;
+            display: inline-block;
+            cursor: pointer;
+            border-radius: 6px;
+            background: #333;
+            overflow: hidden;
+        }
+        .game-card img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        /* 闪电特效动画 */
+        @keyframes lightning {
+            0% { filter: brightness(1); transform: scale(1); }
+            50% { filter: brightness(2.5) drop-shadow(0 0 15px #ffff00); transform: scale(1.08); }
+            100% { filter: brightness(1); transform: scale(1); }
+        }
+        .lightning-effect {
+            animation: lightning 0.5s ease-out;
+        }
+    </style>
+</head>
+<body>
+    <h1>Pi Network 连连看游戏</h1>
+    <div id="status">正在初始化 Pi SDK...</div>
+    <button id="signin-btn" style="display: none;">使用 Pi 登录</button>
+    
+    <div id="game-container" style="display: none;">
+        <button id="start-btn">开始游戏</button>
+        <div id="user-info"></div>
+        <!-- 游戏棋盘容器 -->
+        <div id="game-board"></div>
+    </div>
+
+    <!-- 内置音效（在线音源，免本地文件） -->
+    <audio id="sound-success" preload="auto">
+        <source src="https://assets.mixkit.co/sfx/preview/mixkit-achievement-bell-600.mp3" type="audio/mpeg">
+    
+    <audio id="sound-fail" preload="auto">
+        <source src="https://assets.mixkit.co/sfx/preview/mixkit-software-interface-start-2574.mp3" type="audio/mpeg">
+    
+
+    <script>
+        let currentUser = null;
+        let accessToken = null;
+        let PiUser = null;
+        // 游戏全局变量
+        let startBtn, currentLevel = 0, xp = 0, combo = 0;
+        let gameCards = [];
+        let selectedCard = null;
+        const totalLevel = 5; // 总关卡数，可自行修改
+
+        // === Pi 认证相关（完全符合官方要求）===
+        window.addEventListener("PI_USER_READY", (e) => {
+            PiUser = e.detail;
+            console.log("PI_USER_READY received:", PiUser);
+        });
+        window.__PI_USER__ = window.__PI_USER__ || null;
+
+        function getUser() {
+            return PiUser || window.__PI_USER__ || currentUser;
+        }
+
+        // Pi.init 转为 Promise 并 await
+        async function initPi() {
+            return new Promise((resolve, reject) => {
+                if (typeof window.Pi === 'undefined') {
+                    setTimeout(() => {
+                        if (typeof window.Pi === 'undefined') reject(new Error('Pi SDK 未加载'));
+                        else window.Pi.init({ version: "2.0" }).then(resolve).catch(reject);
+                    }, 800);
+                    return;
+                }
+                window.Pi.init({ version: "2.0" }).then(resolve).catch(reject);
+            });
+        }
+
+        // 后端验证接口（配套前端，调用 Pi 官方 /v2/me 接口）
+        async function validateToken(token) {
+            const res = await fetch("https://api.minepi.com/v2/me", {
+                method: "GET",
+                headers: {
+                    "Authorization": `Bearer ${token}`
+                }
+            });
+            if (!res.ok) throw new Error("Token 验证失败");
+            return await res.json();
+        }
+
+        // 认证主函数：自动触发 + 手动按钮触发，scope: username
+        async function authenticateWithPi() {
+            const statusEl = document.getElementById('status');
+            try {
+                statusEl.textContent = '正在请求 Pi 认证...';
+                // 先完整等待 Pi.init 执行完毕
+                await initPi();
+                // 发起认证，指定 username 权限域
+                const auth = await window.Pi.authenticate(["username"], (payment) => {
+                    console.warn("Incomplete payment found:", payment);
+                });
+
+                accessToken = auth.accessToken;
+                currentUser = auth.user;
+                // 调用 Pi 官方接口验证 token
+                await validateToken(accessToken);
+
+                window.dispatchEvent(new CustomEvent("PI_USER_READY", { 
+                    detail: currentUser 
+                }));
+                window.__PI_USER__ = currentUser;
+
+                document.getElementById('game-container').style.display = 'block';
+                updateUI();
+            } catch (error) {
+                console.error(error);
+                statusEl.textContent = '认证失败或取消，请重试';
+                document.getElementById('signin-btn').style.display = 'inline-block';
+            }
+        }
+
+        function updateUI() {
+            const user = getUser();
+            if (user) {
+                document.getElementById('status').innerHTML = `✅ 已登录：${user.username}`;
+                document.getElementById('user-info').innerHTML = `
+                    <p>用户名: ${user.username}</p>
+                `;
+            }
+        }
+
+        // === 音频、语音、特效工具函数 ===
+        // 播放配对成功音效
+        function playSuccessSound() {
+            const s = document.getElementById('sound-success');
+            s.currentTime = 0;
+            s.play().catch(e=>{});
+        }
+        // 播放配对失败音效
+        function playFailSound() {
+            const s = document.getElementById('sound-fail');
+            s.currentTime = 0;
+            s.play().catch(e=>{});
+        }
+        // 英文语音朗读
+        function speakEnglish(word) {
+            window.speechSynthesis.cancel();
+            const utter = new SpeechSynthesisUtterance(word);
+            utter.lang = "en-US";
+            utter.rate = 0.9;
+            window.speechSynthesis.speak(utter);
+        }
+        // 闪电特效
+        function setLightningEffect(card1, card2) {
+            card1.classList.add('lightning-effect');
+            card2.classList.add('lightning-effect');
+            setTimeout(() => {
+                card1.classList.remove('lightning-effect');
+                card2.classList.remove('lightning-effect');
+            }, 500);
+        }
+
+        // === 连连看游戏逻辑 + 通关循环 ===
+        // 模拟关卡数据（图片+对应英文）
+        const levelData = [
+            [{img:"https://picsum.photos/80/80?1", word:"apple"},{img:"https://picsum.photos/80/80?1", word:"apple"},
+             {img:"https://picsum.photos/80/80?2", word:"banana"},{img:"https://picsum.photos/80/80?2", word:"banana"}],
+            [{img:"https://picsum.photos/80/80?3", word:"cat"},{img:"https://picsum.photos/80/80?3", word:"cat"},
+             {img:"https://picsum.photos/80/80?4", word:"dog"},{img:"https://picsum.photos/80/80?4", word:"dog"}]
+        ];
+
+        // 加载关卡
+        function loadLevel(level) {
+            const board = document.getElementById('game-board');
+            board.innerHTML = "";
+            gameCards = [];
+            const cards = levelData[level % levelData.length]; // 取模实现循环关卡
+
+            cards.forEach((item, idx) => {
+                const div = document.createElement('div');
+                div.className = "game-card";
+                div.dataset.word = item.word;
+                div.innerHTML = `<img src="${item.img}" alt="">`;
+                // 点击朗读英文
+                div.addEventListener('click', ()=>{
+                    speakEnglish(item.word);
+                    cardClickHandle(div);
+                });
+                board.appendChild(div);
+                gameCards.push(div);
+            });
+        }
+
+        // 卡片点击配对逻辑
+        function cardClickHandle(card) {
+            if(selectedCard === card) return;
+            if(!selectedCard) {
+                selectedCard = card;
+            } else {
+                // 判断是否配对成功
+                if(selectedCard.dataset.word === card.dataset.word) {
+                    playSuccessSound();
+                    setLightningEffect(selectedCard, card);
+                    // 匹配成功后置空
+                    selectedCard = null;
+                    checkLevelComplete();
+                } else {
+                    playFailSound();
+                    selectedCard = null;
+                }
+            }
+        }
+
+        // 检测关卡是否通关
+        function checkLevelComplete() {
+            setTimeout(()=>{
+                const remain = gameCards.filter(c=>!c.classList.contains('lightning-effect'));
+                if(remain.length === 0) {
+                    alert("本关通关！");
+                    // 全部关卡走完 → 循环从头再来
+                    currentLevel++;
+                    if(currentLevel >= totalLevel) {
+                        currentLevel = 0;
+                        alert("全部关卡通关，重新开始循环游戏！");
+                    }
+                    loadLevel(currentLevel);
+                }
+            }, 600);
+        }
+
+        // 开始游戏
+        function startGame() {
+            startBtn.style.display = "none";
+            currentLevel = 0;
+            xp = 0;
+            combo = 0;
+            selectedCard = null;
+            updateUI();
+            loadLevel(currentLevel);
+            console.log("游戏开始！当前用户:", getUser());
+        }
+
+        // === 页面初始化 ===
+        window.onload = async () => {
+            startBtn = document.getElementById('start-btn');
+            const signinBtn = document.getElementById('signin-btn');
+
+            signinBtn.style.display = 'inline-block';
+            signinBtn.addEventListener('click', authenticateWithPi);
+            startBtn.addEventListener('click', startGame);
+
+            // 页面加载自动发起认证
+            try {
+                await authenticateWithPi();
+            } catch (e) {
+                document.getElementById('status').textContent = '请点击“使用 Pi 登录”开始';
+            }
+        };
+    </script>
+</body>
+</html>
